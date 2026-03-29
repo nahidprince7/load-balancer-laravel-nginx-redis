@@ -1,0 +1,50 @@
+services:
+  # L7 Balancer
+  nginx_lb:
+    image: nginx:alpine
+    container_name: lb_gateway
+    ports: ["8000:80"]
+    volumes:
+      - ./nginx/lb.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on: [app_node_1, app_node_2]
+
+  # Node 1
+  app_node_1:
+    build:
+      context: .
+      dockerfile: ./php/Dockerfile
+    container_name: app_1
+    volumes: ["../Sources/user:/var/www/html"]
+    environment:
+      - NODE_NAME=Alpha
+
+  # Node 2
+  app_node_2:
+    build:
+      context: .
+      dockerfile: ./php/Dockerfile
+    container_name: app_2
+    volumes: ["../Sources/user:/var/www/html"]
+    environment:
+      - NODE_NAME=Bravo
+
+  # Shared Database
+  mysql:
+    image: mysql:8.4
+    container_name: mysql_db
+    environment:
+      MYSQL_DATABASE: laravel_db
+      MYSQL_ROOT_PASSWORD: root
+    ports: ["3306:3306"]
+
+  # Shared Session Store
+  redis:
+    image: redis:alpine
+    container_name: redis_store
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: pma
+    ports: ["8080:80"]
+    environment:
+      - PMA_HOST=mysql
